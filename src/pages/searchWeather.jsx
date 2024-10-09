@@ -1,12 +1,14 @@
 import axios from "axios";
 import { useCombobox } from "downshift";
 import { useEffect, useState } from "react";
-import { FaEdit } from "react-icons/fa";
-import { IoIosSunny } from "react-icons/io";
+import { FaEdit, FaWind } from "react-icons/fa";
+import { WiHumidity } from "react-icons/wi";
 
 const WeatherDetails = () => {
   const apiUrl = import.meta.env.VITE_GEOCODING_API_URL;
   const apiKey = import.meta.env.VITE_MAP_BOX_TOKEN;
+  const weatherApiKey = import.meta.env.VITE_API_KEY;
+  const iconAPi = import.meta.env.VITE_ICON_API;
 
   const [cityName, setCityName] = useState("");
   const [cities, setCities] = useState([]);
@@ -15,6 +17,17 @@ const WeatherDetails = () => {
     lat: 0,
   });
   const [isInputDisabled, setIsInputDisabled] = useState(false);
+  const [weatherData, setWeatherData] = useState({
+    cityName: "",
+    temperature: 0,
+    weather: "",
+    wind: 0,
+    humidity: 0,
+    icon: "",
+    flag: "",
+    tempMin: 0,
+    pressure: 0,
+  });
 
   const searchCity = async (cityName) => {
     try {
@@ -27,8 +40,19 @@ const WeatherDetails = () => {
 
   const fetchCurrentWeather = async (lat, lng) => {
     try {
-      const res = await axios.get(``);
+      const res = await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${weatherApiKey}`);
       console.log(res.data);
+      setWeatherData({
+        cityName: res.data.name,
+        temperature: res.data.main.temp,
+        weather: res.data.weather[0].main,
+        wind: res.data.wind.speed,
+        humidity: res.data.main.humidity,
+        icon: res.data.weather[0].icon,
+        flag: res.data.sys.country.toLowerCase(),
+        tempMin: res.data.main.temp_min,
+        pressure: res.data.main.pressure,
+      });
     } catch (e) {
       console.error("Error fetching weather data:", e);
     }
@@ -44,8 +68,6 @@ const WeatherDetails = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [cityName]);
 
-  console.log(cityCoordinates);
-
   const { isOpen, getMenuProps, getInputProps, highlightedIndex, getItemProps, selectedItem } = useCombobox({
     items: cities,
     onInputValueChange: ({ inputValue }) => {
@@ -58,6 +80,8 @@ const WeatherDetails = () => {
           lng: selectedItem.geometry.coordinates[0],
           lat: selectedItem.geometry.coordinates[1],
         });
+
+        fetchCurrentWeather(selectedItem.geometry.coordinates[1], selectedItem.geometry.coordinates[0]);
       }
     },
     itemToString: (item) => (item ? item.properties.full_address : ""),
@@ -101,37 +125,26 @@ const WeatherDetails = () => {
           <div className="w-full md:w-1/2 xl:w-1/3 px-4 mb-8">
             <div className="detail bg-gray-800 p-8 text-center shadow-lg rounded-lg shadow-[#434343]">
               <div className="flex items-center justify-around mb-8">
-                <h4 className="font-semibold text-2xl text-white m-0">London</h4>
-                <IoIosSunny className="w-16 h-16 text-yellow-400" />
+                <div className="flex items-center">
+                  <img src={`https://flagcdn.com/16x12/${weatherData.flag}.png`} srcSet={`https://flagcdn.com/32x24/${weatherData.flag}.png 2x, https://flagcdn.com/48x36/${weatherData.flag}.png 3x`} width="36" height="44" className="mr-2 mt-2" />
+                  <h4 className="font-semibold text-4xl text-white m-0">{weatherData.cityName}</h4>
+                </div>
+                <img src={`${iconAPi}/${weatherData.icon}@2x.png`} className="w-[130px] h-[110px]" alt="Weather Icon" />
               </div>
-              <h5 className="font-medium text-lg text-white">Today, 04 April</h5>
-              <h2 className="font-semibold text-6xl leading-tight text-white m-0">
-                24 <b>°</b>
+              <h5 className="font-medium text-lg text-gray-400 mb-4">Today, {new Date().toLocaleDateString()}</h5>
+              <h2 className="font-semibold text-6xl leading-tight text-white m-0 mb-4">
+                {Math.round(weatherData.temperature - 273.15)} <b>°C</b>
               </h2>
-              <p className="font-semibold text-lg text-white mb-8">Sunny</p>
+              <p className="font-semibold text-lg text-gray-300 mb-8">{weatherData.weather}</p>
               <div className="flex items-center justify-center mb-6">
-                <span className="text-white">19 km/h</span>
-                <span className="text-white ml-2">Wind</span>
-              </div>
-              <div className="flex items-center justify-center">
-                <span className="text-white">Hum</span>
-                <span className="text-white ml-2">22%</span>
-              </div>
-            </div>
-          </div>
-          <div className="w-full md:w-1/2 xl:w-1/3 h-full px-4">
-            <div className="h-48 bg-gray-800 p-8 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
-              <img src="./assets/media/icon/windy-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Windy Icon" />
-              <div className="flex items-center justify-center">
-                <p className="font-medium text-lg text-white m-0">Wind</p>
-                <p className="font-semibold text-lg text-white ml-3 m-0">19 km/h</p>
-              </div>
-            </div>
-            <div className="h-44 bg-gray-800 p-8 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
-              <img src="./assets/media/icon/windy-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Windy Icon" />
-              <div className="flex items-center justify-center">
-                <p className="font-medium text-lg text-white m-0">Wind</p>
-                <p className="font-semibold text-lg text-white ml-3 m-0">19 km/h</p>
+                <span className="text-white flex items-center">
+                  <FaWind className="w-8 h-6 mr-2" />
+                  {weatherData.wind} km/h
+                </span>
+                <span className="text-white ml-4 flex items-center">
+                  <WiHumidity className="w-8 h-8" />
+                  Humidity: {weatherData.humidity}%
+                </span>
               </div>
             </div>
           </div>
@@ -140,14 +153,30 @@ const WeatherDetails = () => {
               <img src="./assets/media/icon/windy-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Windy Icon" />
               <div className="flex items-center justify-center">
                 <p className="font-medium text-lg text-white m-0">Wind</p>
-                <p className="font-semibold text-lg text-white ml-3 m-0">19 km/h</p>
+                <p className="font-semibold text-lg text-white ml-3 m-0">{weatherData.wind} km/h</p>
               </div>
             </div>
             <div className="h-44 bg-gray-800 p-8 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
-              <img src="./assets/media/icon/windy-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Windy Icon" />
+              <img src="./assets/media/icon/humidity-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Humidity Icon" />
               <div className="flex items-center justify-center">
-                <p className="font-medium text-lg text-white m-0">Wind</p>
-                <p className="font-semibold text-lg text-white ml-3 m-0">19 km/h</p>
+                <p className="font-medium text-lg text-white m-0">Humidity</p>
+                <p className="font-semibold text-lg text-white ml-3 m-0">{weatherData.humidity}%</p>
+              </div>
+            </div>
+          </div>
+          <div className="w-full md:w-1/2 xl:w-1/3 h-full px-4">
+            <div className="h-48 bg-gray-800 p-8 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
+              <img src="./assets/media/icon/temperature-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Temperature Icon" />
+              <div className="flex items-center justify-center">
+                <p className="font-medium text-lg text-white m-0">Temperature</p>
+                <p className="font-semibold text-lg text-white ml-3 m-0">{Math.round(weatherData.temperature - 273.15)} °C</p>
+              </div>
+            </div>
+            <div className="h-44 bg-gray-800 p-8 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
+              <img src="./assets/media/icon/weather-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Weather Icon" />
+              <div className="flex items-center justify-center">
+                <p className="font-medium text-lg text-white m-0">Weather</p>
+                <p className="font-semibold text-lg text-white ml-3 m-0">{weatherData.weather}</p>
               </div>
             </div>
           </div>
