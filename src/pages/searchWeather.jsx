@@ -3,15 +3,21 @@ import { useCombobox } from "downshift";
 import { useEffect, useState } from "react";
 import { FaEdit, FaWind } from "react-icons/fa";
 import { WiHumidity } from "react-icons/wi";
+import { FaTemperatureArrowDown } from "react-icons/fa6";
+import { FaTemperatureArrowUp } from "react-icons/fa6";
 
 const WeatherDetails = () => {
   const apiUrl = import.meta.env.VITE_GEOCODING_API_URL;
   const apiKey = import.meta.env.VITE_MAP_BOX_TOKEN;
   const weatherApiKey = import.meta.env.VITE_API_KEY;
   const iconAPi = import.meta.env.VITE_ICON_API;
+  const fiveDaysForecast = import.meta.env.VITE_FIVE_DAYS_FORECAST_API;
+
+  // /forecast?lat=44.34&lon=10.99&appid={API key}
 
   const [cityName, setCityName] = useState("");
   const [cities, setCities] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [cityCoordinates, setCityCoordinates] = useState({
     lng: 0,
     lat: 0,
@@ -26,7 +32,7 @@ const WeatherDetails = () => {
     icon: "",
     flag: "",
     tempMin: 0,
-    pressure: 0,
+    tempMax: 0,
   });
 
   const searchCity = async (cityName) => {
@@ -51,7 +57,7 @@ const WeatherDetails = () => {
         icon: res.data.weather[0].icon,
         flag: res.data.sys.country.toLowerCase(),
         tempMin: res.data.main.temp_min,
-        pressure: res.data.main.pressure,
+        tempMax: res.data.main.temp_max,
       });
     } catch (e) {
       console.error("Error fetching weather data:", e);
@@ -88,6 +94,9 @@ const WeatherDetails = () => {
   });
 
   return (
+
+  <>
+
     <section className="pt-24 w-[94%] mx-auto">
       <div>
         <div className="text-center">
@@ -123,7 +132,7 @@ const WeatherDetails = () => {
         </div>
         <div className="flex flex-wrap -mx-4">
           <div className="w-full md:w-1/2 xl:w-1/3 px-4 mb-8">
-            <div className="detail bg-gray-800 p-8 text-center shadow-lg rounded-lg shadow-[#434343]">
+            <div className="detail bg-gray-800 p-4 text-center shadow-lg rounded-lg shadow-[#434343]">
               <div className="flex items-center justify-around mb-8">
                 <div className="flex items-center">
                   <img src={`https://flagcdn.com/16x12/${weatherData.flag}.png`} srcSet={`https://flagcdn.com/32x24/${weatherData.flag}.png 2x, https://flagcdn.com/48x36/${weatherData.flag}.png 3x`} width="36" height="44" className="mr-2 mt-2" />
@@ -149,40 +158,42 @@ const WeatherDetails = () => {
             </div>
           </div>
           <div className="w-full md:w-1/2 xl:w-1/3 h-full px-4">
-            <div className="h-48 bg-gray-800 p-8 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
-              <img src="./assets/media/icon/windy-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Windy Icon" />
-              <div className="flex items-center justify-center">
-                <p className="font-medium text-lg text-white m-0">Wind</p>
-                <p className="font-semibold text-lg text-white ml-3 m-0">{weatherData.wind} km/h</p>
+            <div className="h-48 bg-gray-800 p-4 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
+              <FaWind className="w-[100px] mx-auto h-[80px] text-white text-center" />
+
+              <div className="flex items-center justify-center mt-8">
+                <p className="font-medium text-xl text-white m-0">Wind</p>
+                <p className="font-semibold text-2xl text-white ml-3 m-0">{weatherData.wind} km/h</p>
               </div>
             </div>
-            <div className="h-44 bg-gray-800 p-8 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
-              <img src="./assets/media/icon/humidity-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Humidity Icon" />
-              <div className="flex items-center justify-center">
-                <p className="font-medium text-lg text-white m-0">Humidity</p>
-                <p className="font-semibold text-lg text-white ml-3 m-0">{weatherData.humidity}%</p>
+            <div className="h-44 bg-gray-800 p-4 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
+              <WiHumidity className="w-[100px] mx-auto h-[80px] text-white text-center" />
+              <div className="flex items-center justify-center mt-4">
+                <p className="font-medium text-xl text-white m-0">Humidity</p>
+                <p className="font-semibold text-2xl text-white ml-3 m-0">{weatherData.humidity}%</p>
               </div>
             </div>
           </div>
           <div className="w-full md:w-1/2 xl:w-1/3 h-full px-4">
-            <div className="h-48 bg-gray-800 p-8 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
-              <img src="./assets/media/icon/temperature-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Temperature Icon" />
-              <div className="flex items-center justify-center">
-                <p className="font-medium text-lg text-white m-0">Temperature</p>
-                <p className="font-semibold text-lg text-white ml-3 m-0">{Math.round(weatherData.temperature - 273.15)} °C</p>
+            <div className="h-48 bg-gray-800 p-4 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
+              <FaTemperatureArrowDown className="w-[100px] mx-auto h-[80px] text-white text-center" />
+              <div className="flex items-center justify-center mt-8">
+                <p className="font-medium text-xl text-white m-0">Minimum Temperature</p>
+                <p className="font-semibold text-2xl text-white ml-3 m-0">{Math.round(weatherData.tempMin - 273.15)} °C</p>
               </div>
             </div>
-            <div className="h-44 bg-gray-800 p-8 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
-              <img src="./assets/media/icon/weather-dark.png" className="w-12 h-12 mb-4 mx-auto" alt="Weather Icon" />
-              <div className="flex items-center justify-center">
-                <p className="font-medium text-lg text-white m-0">Weather</p>
-                <p className="font-semibold text-lg text-white ml-3 m-0">{weatherData.weather}</p>
+            <div className="h-44 bg-gray-800 p-4 text-center shadow-lg rounded-lg mb-6 shadow-[#434343]">
+              <FaTemperatureArrowUp className="w-[80px] mx-auto h-[80px] text-white text-center" />
+              <div className="flex items-center justify-center mt-4">
+                <p className="font-medium text-xl text-white">Maximum Temperature</p>
+                <p className="font-semibold text-2xl text-white ml-3 m-0">{Math.round(weatherData.tempMax - 273.15)} °C</p>
               </div>
             </div>
           </div>
         </div>
       </div>
     </section>
+    </>
   );
 };
 
