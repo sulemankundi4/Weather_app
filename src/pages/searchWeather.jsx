@@ -5,6 +5,7 @@ import { FaEdit, FaWind } from "react-icons/fa";
 import { WiHumidity } from "react-icons/wi";
 import { FaTemperatureArrowDown, FaTemperatureArrowUp } from "react-icons/fa6";
 import TemperatureGraph from "../components/temperatureGraph";
+import Loader  from "../components/loader";
 
 const WeatherDetails = () => {
   const apiUrl = import.meta.env.VITE_GEOCODING_API_URL;
@@ -55,6 +56,7 @@ const WeatherDetails = () => {
   };
 
   const fetchCurrentWeather = async (lat, lng) => {
+    setLoading(true);
     try {
       const res = await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${weatherApiKey}`);
       console.log(res.data);
@@ -71,7 +73,9 @@ const WeatherDetails = () => {
       });
 
       fetchFourDaysForecast(lat, lng);
+      setLoading(false);
     } catch (e) {
+      setLoading(false);
       console.error("Error fetching weather data:", e);
     }
   };
@@ -85,6 +89,24 @@ const WeatherDetails = () => {
 
     return () => clearTimeout(delayDebounceFn);
   }, [cityName]);
+
+  useEffect(() => {
+    // Get user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCityCoordinates({ lat: latitude, lng: longitude });
+          fetchCurrentWeather(latitude, longitude);
+        },
+        (error) => {
+          console.error("Error getting user's location:", error);
+        }
+      );
+    } else {
+      console.error("Geolocation is not supported by this browser.");
+    }
+  }, []);
 
   const { isOpen, getMenuProps, getInputProps, highlightedIndex, getItemProps, selectedItem } = useCombobox({
     items: cities,
@@ -109,7 +131,9 @@ const WeatherDetails = () => {
 
   return (
     <>
-      <section className="pt-24 w-[94%] mx-auto">
+    {
+      loading ? (<Loader/>): (<>
+        <section className="pt-24 w-[94%] mx-auto">
         <div>
           <div className="text-center">
             <h2 className="font-semibold text-4xl leading-tight tracking-wide text-white mb-4">Today Weather Details</h2>
@@ -205,11 +229,12 @@ const WeatherDetails = () => {
         </div>
       </section>
 
-      <section className="pt-24 w-[94%] mx-auto">
-      <h2 className="font-semibold text-4xl text-center leading-tight tracking-wide text-white mb-4">Upcoming 4 Days Forecast (3 Hourly)</h2>
-
+      <section className="pt-24 w-[94%] mx-auto bg-black">
         {graphData && graphData.list && graphData.list.length > 0 && <TemperatureGraph data={graphData} />}
       </section>
+      </>)
+    }
+
     </>
   );
 };

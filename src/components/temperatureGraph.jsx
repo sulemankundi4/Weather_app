@@ -8,8 +8,6 @@ const TemperatureGraph = ({ data }) => {
    console.log(times)
 
 
-
-
   const chartData = {
    labels: times,
 
